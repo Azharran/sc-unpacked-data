@@ -16,6 +16,7 @@ La version du jeu correspondante est dans [`_version.json`](_version.json), et d
 | `items.json`, `items/` | Tous les objets du jeu, une fiche par objet |
 | `blueprints.json`, `blueprints/` | Plans de fabrication |
 | `contracts/` | Contrats et missions |
+| `contracts.jsonl.xz` | Tous les contrats en un seul fichier (xz, une ligne JSON par contrat : `path` + `data`) |
 | `factions/` | Factions et paliers de réputation |
 | `resources/` | Minerais, récoltables, lieux de minage, denrées |
 | `starmap.json`, `starmap_positions.json`, `trade_locations.json` | Carte stellaire, positions, lieux de commerce |

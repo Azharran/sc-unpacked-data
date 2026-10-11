@@ -210,6 +210,34 @@ def controler(dest: Path) -> list:
     return pb
 
 
+def regrouper_contrats(dest: Path) -> int:
+    """Écrit contracts.jsonl.xz : tous les fichiers de contracts/ en un seul.
+
+    LYRA lisait les contrats un par un (5 000 requêtes en rafale, dont GitHub
+    refuse toujours quelques-unes). Ici, une ligne par contrat :
+        {"path": "contracts/….json", "data": <contenu du fichier, tel quel>}
+    Les fichiers individuels restent publiés, en repli.
+
+    xz et non zip : les contrats se ressemblent énormément, et seule une
+    compression « d'un bloc » en profite — 235 Mo deviennent ~3 Mo, contre
+    55 Mo en zip (au-dessus de la taille conseillée par GitHub).
+    Ordre trié : un export inchangé donne le même fichier, donc le même SHA git."""
+    import lzma
+    fichiers = sorted((dest / "contracts").rglob("*.json"))
+    lignes = []
+    for f in fichiers:
+        # Relu puis réécrit en compact : garantit UNE ligne par contrat, quelle
+        # que soit la mise en forme du fichier d'origine.
+        ligne = json.dumps({"path": f.relative_to(dest).as_posix(),
+                            "data": json.loads(f.read_bytes())},
+                           ensure_ascii=False, separators=(",", ":"))
+        lignes.append(ligne.encode("utf-8") + bytes([10]))
+    cible = dest / "contracts.jsonl.xz"
+    cible.write_bytes(lzma.compress(b"".join(lignes), preset=6))
+    dire(f"  contracts.jsonl.xz             {len(fichiers):>7} contrats, {cible.stat().st_size / 1e6:.1f} Mo")
+    return len(fichiers)
+
+
 def main():
     ap = argparse.ArgumentParser(description="Fabrique l'export scunpacked depuis le jeu installé.")
     ap.add_argument("--p4k", type=Path, default=P4K_DEFAUT)
@@ -239,6 +267,7 @@ def main():
         dire(f"  Il reste consultable dans {dest.name}/")
         sys.exit(2)
 
+    regrouper_contrats(dest)
     (dest / "_version.json").write_text(json.dumps(
         {"jeu": jeu, "genere_le": time.strftime("%Y-%m-%d %H:%M:%S"),
          "outil": "unp4k + unforge (fork StarCitizenWiki) + ScDataDumper (octfx) + correctifs LYRA"},
