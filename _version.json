@@ -1,0 +1,9 @@
+{
+ "jeu": {
+  "branche": "sc-alpha-4.10.2",
+  "version": "4.10.196.36804",
+  "changelist": "12881860"
+ },
+ "genere_le": "2026-10-11 11:47:00",
+ "outil": "unp4k + unforge (fork StarCitizenWiki) + ScDataDumper (octfx) + correctifs LYRA"
+}

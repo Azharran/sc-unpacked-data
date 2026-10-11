@@ -1,0 +1,62 @@
+diff --git a/src/Formats/ScUnpacked/Loadout.php b/src/Formats/ScUnpacked/Loadout.php
+index 7b9efd4..1083813 100644
+--- a/src/Formats/ScUnpacked/Loadout.php
++++ b/src/Formats/ScUnpacked/Loadout.php
+@@ -36,7 +36,7 @@ final class Loadout extends BaseFormat
+ 
+         $entity = $entry->getInstalledItem();
+ 
+-        if ($entity instanceof EntityClassDefinition) {
++        if ($entity instanceof EntityClassDefinition && $entity->getAttachDef() !== null) { // LYRA : 4.10.2
+             $loadout['InstalledItem'] = new Item($entity)->toArray();
+         }
+ 
+diff --git a/src/Services/ItemClassifierService.php b/src/Services/ItemClassifierService.php
+index edadcae..5fc2adc 100644
+--- a/src/Services/ItemClassifierService.php
++++ b/src/Services/ItemClassifierService.php
+@@ -478,7 +478,12 @@ final class ItemClassifierService
+         if (strcasecmp((string) $type, 'WeaponAttachment') === 0 && strcasecmp((string) $subType, 'Barrel') === 0) {
+             $isShipPath = self::pathMatch($entity, 'ships/') ? 'ship' : 'nonship';
+ 
+-            return $base.'|'.$isShipPath;
++            // LYRA : le classement dépend aussi du tag FPS_Barrel. Sans lui dans la
++            // clé, le premier canon rencontré (sans tag) figeait « non classé »
++            // pour tous les autres, qui sortaient de fps-items.json.
++            $hasFpsTag = self::tagMatch($entity, 'FPS_Barrel') ? 'fps' : 'nofps';
++
++            return $base.'|'.$isShipPath.'|'.$hasFpsTag;
+         }
+ 
+         if (strcasecmp((string) $type, 'DockingCollar') === 0 && strcasecmp((string) $subType, 'UNDEFINED') === 0) {
+diff --git a/src/Services/Vehicle/LoadoutBuilder.php b/src/Services/Vehicle/LoadoutBuilder.php
+index 618e0f4..9e9aaae 100644
+--- a/src/Services/Vehicle/LoadoutBuilder.php
++++ b/src/Services/Vehicle/LoadoutBuilder.php
+@@ -92,6 +92,12 @@ final class LoadoutBuilder
+ 
+         $entity = $this->resolveItem($entry['classReference'], $entry['className']);
+ 
++        // LYRA : depuis la 4.10.2, un loadout peut référencer une entité sans
++        // AttachDef (pas un item). La formater plantait tout l'export.
++        if ($entity !== null && $entity->getAttachDef() === null) {
++            $entity = null;
++        }
++
+         if ($entity !== null) {
+             // Check for circular reference
+             $itemKey = $entity->getUuid() ?: $entity->getClassName();
+diff --git a/src/Services/Vehicle/StandardisedPartBuilder.php b/src/Services/Vehicle/StandardisedPartBuilder.php
+index ef0cae3..17d4403 100644
+--- a/src/Services/Vehicle/StandardisedPartBuilder.php
++++ b/src/Services/Vehicle/StandardisedPartBuilder.php
+@@ -312,7 +312,8 @@ final class StandardisedPartBuilder
+             $loadoutEntry['className'] ?? null
+         );
+ 
+-        if ($entity === null) {
++        // LYRA : entité sans AttachDef (4.10.2) = pas un item, cf. LoadoutBuilder.
++        if ($entity === null || $entity->getAttachDef() === null) {
+             return null;
+         }
+ 

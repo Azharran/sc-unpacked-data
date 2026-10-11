@@ -1,0 +1,5 @@
+# Image ScDataDumper + extension zip (absente du Dockerfile amont, requise par SocpakReader)
+FROM scdatadumper-scdatadumper:latest
+USER root
+RUN apt-get update && apt-get install -y --no-install-recommends libzip-dev \
+    && docker-php-ext-install zip && rm -rf /var/lib/apt/lists/*
