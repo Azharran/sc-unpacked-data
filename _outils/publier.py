@@ -45,7 +45,7 @@ def main():
         jeu = json.loads((EXPORT / "_version.json").read_text(encoding="utf-8"))["jeu"]
     except (OSError, ValueError, KeyError):
         stop("export/_version.json absent : lance d'abord EXTRAIRE_DONNEES_JEU.bat.")
-    etiquette = f"{jeu['branche']} · {jeu['version']} · {jeu['changelist']}"
+    etiquette = f"{jeu.get('patch', '?')} · {jeu['branche']} · {jeu['version']} · {jeu['changelist']}"
 
     print("Copie de export/ vers depot/…")
     # robocopy /MIR : miroir. Codes de retour < 8 = réussite.

@@ -19,6 +19,7 @@ export-<version>/ et ne remplace export/ que s'il passe les contrôles.
 import argparse
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -243,6 +244,7 @@ def main():
     ap.add_argument("--p4k", type=Path, default=P4K_DEFAUT)
     ap.add_argument("--sans-extraction", action="store_true",
                     help="réutilise import/ (étapes 1 et 2 sautées)")
+    ap.add_argument("--patch", help="numéro du patch tel que l'annonce CIG, ex. 4.10.3 (demandé sinon)")
     a = ap.parse_args()
     debut = time.time()
 
@@ -250,6 +252,14 @@ def main():
     jeu = version_jeu(a.p4k)
     nom = f"{jeu.get('version', 'inconnue')}-{jeu.get('changelist', '0')}"
     dire(f"  Version  : {jeu.get('branche')} · {nom}")
+    # Le numéro de patch annoncé (« 4.10.3 ») n'est écrit nulle part dans le jeu :
+    # la 4.10.3 porte la branche « sc-alpha-4.10.0 » et la version 4.10.200.
+    # LYRA l'affiche partout (config.json → sc_version), il vient donc du joueur.
+    patch = (a.patch or "").strip()
+    while not re.fullmatch(r"\d+\.\d+(\.\d+)?", patch):
+        patch = input("  Numéro du patch annoncé par CIG (ex. 4.10.3) : ").strip()
+    jeu["patch"] = patch
+    dire(f"  Patch    : {patch}")
 
     if not a.sans_extraction:
         extraire(a.p4k)
